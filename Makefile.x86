@@ -1,0 +1,45 @@
+AR=$(CROSS)ar
+CC=$(CROSS)gcc
+CXX=$(CROSS)g++
+STRIP=$(CROSS)strip
+
+LDFLAGS=-shared -s -fPIC
+CFLAGS=-fPIC -Wall
+ARFLAGS=-rc
+
+INCLUDE+= -I../cfgfile -I../../lib/inc/ghttp/ -I./inc/hiredis
+LIBPATH= -L../../lib/$(HOST)/slib/ -lghttp
+
+LIB_USR=libvos.so
+SLIB_USR=libvos.a
+
+OBJ_USR=vos.o RedisClt.o
+SOBJ_USR=vos.o RedisClt.o
+
+DATE=$(shell date "+%Y%m%d-%H%M")
+MACRO+=-DBNO=\"$(DATE)\"
+
+#-----------------------default generate shared lib----------------------
+all: $(LIB_USR)
+
+$(LIB_USR): $(OBJ_USR)
+	$(CC) $(LDFLAGS) -o $@ $(OBJ_USR) $(MACRO) $(LIBPATH)
+	$(STRIP) $(LIB_USR)
+	cp $@ ../../lib/$(HOST)
+#	rm $(OBJ_USR)
+$(OBJ_USR):%.o: %.c
+	$(CC) $(INCLUDE) $(CFLAGS) $< -c $(MACRO)
+	
+#-----------------------generate static lib-----------------------------
+slib:	$(SLIB_USR)
+$(SLIB_USR): $(SOBJ_USR)
+	$(AR) $(ARFLAGS) -o $@ $(SOBJ_USR)
+	cp $@ ../../lib/$(HOST)/slib
+#	rm $(OBJ_USR)
+#$(SOBJ_USR):%.o: %.c
+#	$(CC) $(INCLUDE) $< -c	$(MACRO)
+
+#----------------------------------------clean all-------------------------
+clean:
+	-$(RM) *.so *.o *.a
+
